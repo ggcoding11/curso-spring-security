@@ -8,7 +8,6 @@ public class CursoSpringSecurityApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(CursoSpringSecurityApplication.class, args);
-        System.out.println("");
     }
 
 }
