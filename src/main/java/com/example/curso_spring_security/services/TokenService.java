@@ -6,9 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.example.curso_spring_security.models.User;
 import com.example.curso_spring_security.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -20,36 +18,59 @@ public class TokenService {
     @Value("${security.jwt.secret}")
     private String secretKey;
 
-    @Autowired
-    private UserRepository userRepository;
+    public String generateAccessToken(String username) {
+        Algorithm algorithm = Algorithm.HMAC256(secretKey);
 
-    public String generateToken(String username) {
+        return JWT.create()
+                .withSubject(username)
+                .withIssuer("curso-spring-security")
+                .withClaim("type", "access")
+                .withExpiresAt(Instant.now().plus(15, ChronoUnit.MINUTES))
+                .sign(algorithm);
+    }
+
+    public String generateRefreshToken(String username) {
+        Algorithm algorithm = Algorithm.HMAC256(secretKey);
+
+        return JWT.create()
+                .withSubject(username)
+                .withIssuer("curso-spring-security")
+                .withClaim("type", "refresh")
+                .withExpiresAt(Instant.now().plus(7, ChronoUnit.DAYS))
+                .sign(algorithm);
+    }
+
+    public String validateAccessToken(String token) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secretKey);
-            String token = JWT.create()
-                    .withSubject(username)
-                    .withExpiresAt(Instant.now().plus(15, ChronoUnit.MINUTES))
-                    .withIssuer("curso-spring-security")
-                    .sign(algorithm);
 
-            return token;
-        } catch (JWTCreationException exception) {
+            JWTVerifier verifier = JWT.require(algorithm)
+                    .withIssuer("curso-spring-security")
+                    .withClaim("type", "access")
+                    .build();
+
+            DecodedJWT decodedJWT = verifier.verify(token);
+
+            return decodedJWT.getSubject();
+
+        } catch (JWTVerificationException exception) {
             return null;
         }
     }
 
-    public String validateToken(String token) {
-        DecodedJWT decodedJWT;
-
+    public String validateRefreshToken(String token) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secretKey);
+
             JWTVerifier verifier = JWT.require(algorithm)
                     .withIssuer("curso-spring-security")
+                    .withClaim("type", "refresh")
                     .build();
 
-            decodedJWT = verifier.verify(token);
+            DecodedJWT decodedJWT = verifier.verify(token);
 
             return decodedJWT.getSubject();
+
         } catch (JWTVerificationException exception) {
             return null;
         }

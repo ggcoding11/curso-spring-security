@@ -1,5 +1,6 @@
 package com.example.curso_spring_security.models;
 
+import com.example.curso_spring_security.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -22,9 +23,13 @@ public class User implements UserDetails {
     private String username;
     private String password;
 
-    public User(String password, String username) {
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
+
+    public User(String password, String username, UserRole role) {
         this.password = password;
         this.username = username;
+        this.role = role;
     }
 
     @Override
@@ -39,6 +44,10 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ADMIN"));
+        if (role == UserRole.ADMIN) {
+            return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_USER"));
+        }
+
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 }
